@@ -34,7 +34,7 @@ app.use(
 // });
 
 // Webhook verification endpoint
-app.get("/", (req: Request, res: Response) => {
+app.get("/webhooks", (req: Request, res: Response) => {
   // Parse query parameters
   const verifyToken = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
@@ -64,7 +64,7 @@ app.get("/", (req: Request, res: Response) => {
   }
 });
 
-app.post("/", (req: Request, res: Response): void => {
+app.post("/webhooks", (req: Request, res: Response): void => {
   console.log("Received POST request on /webhooks");
 
   // Get the signature from headers
