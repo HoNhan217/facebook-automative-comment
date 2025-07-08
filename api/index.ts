@@ -64,6 +64,79 @@ app.get("/webhooks", (req: Request, res: Response) => {
   }
 });
 
+// app.post("/webhooks", (req: Request, res: Response): void => {
+//   console.log("Received POST request on /webhooks");
+
+//   // Get the signature from headers
+//   const signature = req.headers["x-hub-signature-256"] as string;
+
+//   // Get raw body as string for signature validation
+//   const rawBody = (req as any).rawBody;
+
+//   if (!rawBody) {
+//     console.log("Raw body not available for signature validation.");
+//     res.status(400).send("Bad Request - Missing raw body");
+//     return;
+//   }
+
+//   // Validate the payload signature
+//   if (!validateSignature(rawBody, signature)) {
+//     console.log("Webhook signature validation failed");
+//     res.status(403).send("Forbidden - Invalid signature");
+//     return;
+//   }
+
+//   const body = req.body;
+//   console.log("Webhook event received:", body);
+
+//   // Parse the JSON body
+//   // let body;
+//   // try {
+//   //   body = JSON.parse(rawBody);
+//   // } catch (error) {
+//   //   console.log("Invalid JSON payload");
+//   //   res.status(400).send("Bad Request - Invalid JSON");
+//   //   return;
+//   // }
+
+//   console.log("Webhook event received:", body);
+
+//   // Check if the request is from a page or user subscription
+//   if (body.object === "page" || body.object === "user") {
+//     // Iterate through each entry in the body
+//     body.entry.forEach((entry: any) => {
+//       console.log("Processing entry:", {
+//         id: entry.id,
+//         uid: entry.uid,
+//         time: entry.time,
+//       });
+
+//       // Process each change in the entry
+//       entry.changes.forEach((change: any) => {
+//         console.log("Change detected:", change);
+
+//         // Handle specific field changes
+//         if (change.field === "photos") {
+//           console.log("Photo change:", {
+//             verb: change.value.verb,
+//             object_id: change.value.object_id,
+//           });
+//           // Handle photo updates here
+//         }
+
+//         // Here you can handle other change types, e.g., save to database, send notifications, etc.
+//       });
+//     });
+
+//     // Respond with '200 OK' to acknowledge receipt of the event
+//     res.status(200).send("EVENT_RECEIVED");
+//   } else {
+//     console.log("Received event for unsupported object type:");
+//     // Respond with '404 Not Found' if the object is not a page or user
+//     res.status(404).send("Not Found");
+//   }
+// });
+
 app.post("/webhooks", (req: Request, res: Response): void => {
   console.log("Received POST request on /webhooks");
 
@@ -103,35 +176,45 @@ app.post("/webhooks", (req: Request, res: Response): void => {
 
   // Check if the request is from a page or user subscription
   if (body.object === "page" || body.object === "user") {
-    // Iterate through each entry in the body
-    body.entry.forEach((entry: any) => {
-      console.log("Processing entry:", {
-        id: entry.id,
-        uid: entry.uid,
-        time: entry.time,
-      });
+    // Check if entry array exists
+    if (body.entry && Array.isArray(body.entry)) {
+      // Iterate through each entry in the body
+      body.entry.forEach((entry: any) => {
+        console.log("Processing entry:", {
+          id: entry.id,
+          uid: entry.uid,
+          time: entry.time,
+        });
 
-      // Process each change in the entry
-      entry.changes.forEach((change: any) => {
-        console.log("Change detected:", change);
+        // Check if changes array exists before processing
+        if (entry.changes && Array.isArray(entry.changes)) {
+          // Process each change in the entry
+          entry.changes.forEach((change: any) => {
+            console.log("Change detected:", change);
 
-        // Handle specific field changes
-        if (change.field === "photos") {
-          console.log("Photo change:", {
-            verb: change.value.verb,
-            object_id: change.value.object_id,
+            // Handle specific field changes
+            if (change.field === "photos") {
+              console.log("Photo change:", {
+                verb: change.value?.verb,
+                object_id: change.value?.object_id,
+              });
+              // Handle photo updates here
+            }
+
+            // Here you can handle other change types, e.g., save to database, send notifications, etc.
           });
-          // Handle photo updates here
+        } else {
+          console.log("No changes array found in entry:", entry);
         }
-
-        // Here you can handle other change types, e.g., save to database, send notifications, etc.
       });
-    });
+    } else {
+      console.log("No entry array found in webhook payload");
+    }
 
     // Respond with '200 OK' to acknowledge receipt of the event
     res.status(200).send("EVENT_RECEIVED");
   } else {
-    console.log("Received event for unsupported object type:");
+    console.log("Received event for unsupported object type:", body.object);
     // Respond with '404 Not Found' if the object is not a page or user
     res.status(404).send("Not Found");
   }
